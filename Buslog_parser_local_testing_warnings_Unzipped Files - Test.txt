@@ -1,0 +1,4 @@
+Warnings:
+on 1: C:\Users\1292786\OneDrive - The Metropolitan Transportation Authority\Documents\Code\AVN_to_S3\buslog_parser_local_testing.py:70: ParserWarning: Skipping line 8786: expected 16 fields, saw 31
+      
+        df = pd.read_csv(clean_text_file, sep='|', header=None, on_bad_lines='warn') #FIX: Lines that aren't 16 columns (two lines were combined into one)

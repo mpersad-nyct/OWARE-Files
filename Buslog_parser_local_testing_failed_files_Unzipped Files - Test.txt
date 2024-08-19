@@ -1,0 +1,4 @@
+Failed Files:
+C:\Users\1292786\OneDrive - The Metropolitan Transportation Authority\Documents\Bus Vehicle Diagnostics\Unzipped Files - Test\CleverWare0006006240429.txt
+Error tokenizing data. C error: Expected 16 fields in line 8786, saw 31
+
