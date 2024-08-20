@@ -312,6 +312,61 @@ def remove_gps_error_speeds(df):
 
     return df
 
+#2024-08-19
+def remove_sporadic_gps_speed_jump(df):
+    if len(df) == 0:
+        return df
+    
+    all_intervals = []
+    max_speed_difference_factor = 1.75
+    for index, row in df.iterrows():
+        if row['Harsh Acceleration']:
+            if row['Speed'] * max_speed_difference_factor < row['GPS Speed']:
+                all_intervals.append((index, index + 1))
+    
+    if all_intervals:
+        all_intervals = sorted(all_intervals, key=lambda x: x[0], reverse=True)
+
+        for index, item in enumerate(all_intervals):
+            df = df.drop(df.index[item[0]:item[1]])
+
+    df = df.reset_index(drop=True)
+
+    return df
+
+#2024-08-19
+def remove_sporadic_gps_speed_drop(df):
+    if len(df) == 0:
+        return df
+    
+    prev_index = 0
+    prev_row = ""
+    all_intervals = []
+    max_speed_difference = 20
+    for index, row in df.iterrows():
+        if index == 0:
+            prev_index = index
+            prev_row = row
+            continue
+        if index == df.shape[0]:
+            continue
+
+        if row['Harsh Braking']:
+            if abs(prev_row['GPS Speed'] - row['GPS Speed']) > max_speed_difference and abs(df.iloc[index + 1]['GPS Speed'] - row['GPS Speed']) > max_speed_difference:
+                all_intervals.append((index, index + 1))
+        prev_index = index
+        prev_row = row
+    
+    if all_intervals:
+        all_intervals = sorted(all_intervals, key=lambda x: x[0], reverse=True)
+
+        for index, item in enumerate(all_intervals):
+            df = df.drop(df.index[item[0]:item[1]])
+
+    df = df.reset_index(drop=True)
+
+    return df
+
 #def lambda_handler(file, output_path):
 #def lambda_handler(file):
 def lambda_handler(file_and_output_path):
@@ -636,6 +691,16 @@ def lambda_handler(file_and_output_path):
                         joined_df = remove_gps_error_speeds(joined_df)
                         joined_df = joined_df.reset_index(drop=True)
 
+                        #2024-08-19 FIX GPS Speed Jumps Anomaly
+                        joined_df = joined_df.reset_index(drop=True)
+                        joined_df = remove_sporadic_gps_speed_jump(joined_df)
+                        joined_df = joined_df.reset_index(drop=True)
+
+                        #2024-08-19 FIX GPS Speed Drops Anomaly
+                        joined_df = joined_df.reset_index(drop=True)
+                        joined_df = remove_sporadic_gps_speed_drop(joined_df)
+                        joined_df = joined_df.reset_index(drop=True)
+
                         #########################################                      Recalcuate                      #########################################
                         joined_df = joined_df.assign(
                             Acceleration=joined_df['Speed'].diff() / joined_df['DateTime'].diff().dt.total_seconds(),
@@ -692,6 +757,16 @@ def lambda_handler(file_and_output_path):
                         #2024-08-13 FIX GPS Anomaly
                         joined_df = joined_df.reset_index(drop=True)
                         joined_df = remove_gps_error_speeds(joined_df)
+                        joined_df = joined_df.reset_index(drop=True)
+
+                        #2024-08-19 FIX GPS Speed Jumps Anomaly
+                        joined_df = joined_df.reset_index(drop=True)
+                        joined_df = remove_sporadic_gps_speed_jump(joined_df)
+                        joined_df = joined_df.reset_index(drop=True)
+
+                        #2024-08-19 FIX GPS Speed Drops Anomaly
+                        joined_df = joined_df.reset_index(drop=True)
+                        joined_df = remove_sporadic_gps_speed_drop(joined_df)
                         joined_df = joined_df.reset_index(drop=True)
 
                         #########################################                      Recalcuate                      #########################################
@@ -773,12 +848,12 @@ def lambda_handler(file_and_output_path):
 
                         curated_files_generated = True
                         if 1527 <= int(bus_id) <= 2716:
-                            joined_df = joined_df[joined_df['Speed'] <= 60]
+                            #joined_df = joined_df[joined_df['Speed'] <= 60]
                             joined_df.to_csv(os.path.join(output_path, output_file), index=False)
                             #print("Parsing Complete")
                             #print(f'This is an Express bus with Bus ID: {bus_id}')
                         else:
-                            joined_df = joined_df[joined_df['Speed'] <= 40]
+                            #joined_df = joined_df[joined_df['Speed'] <= 40]
                             joined_df.to_csv(os.path.join(output_path, output_file), index=False)
                             #print("Parsing Complete")
                             #print(f'This is not an Express bus with Bus ID: {bus_id}')
